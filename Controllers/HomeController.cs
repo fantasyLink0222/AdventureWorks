@@ -97,8 +97,9 @@ namespace AdventureWorks.Controllers
             if (!string.IsNullOrEmpty(searchString))
             {
                 productCategories =
-                    productCategories.Where(p => p.ProductName.Contains(searchString) ||
-                                        p.ProductNumber.Contains(searchString)).ToList();
+                    productCategories.Where(pc => pc.ProductName.Contains(searchString) ||
+                                                 pc.ProductNumber.Contains(searchString)||
+                                                 pc.CategoryName.Contains(searchString)).ToList();
             }
 
 
