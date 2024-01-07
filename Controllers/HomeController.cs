@@ -3,6 +3,7 @@ using AdventureWorks.Interface;
 using AdventureWorks.Models;
 using AdventureWorks.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 using System.Drawing.Printing;
 
@@ -13,14 +14,17 @@ namespace AdventureWorks.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly AdventureWorksContext _db;
         private readonly IRepository<ProductVM> _productRepo;
+        private readonly IRepository<ProductCategoryVM> _productCategoryRepo;
 
         public HomeController(ILogger<HomeController> logger
                              ,AdventureWorksContext db
-                             , IRepository<ProductVM> productRepo)
+                             , IRepository<ProductVM> productRepo
+                             , IRepository<ProductCategoryVM> productCategoryRepo)
         {
             _logger = logger;
             _db = db;
             _productRepo = productRepo;
+            _productCategoryRepo = productCategoryRepo;
         }
 
         public IActionResult Index(string sortOrder,string searchString,int? pageNumber, int pageSize = 4)
@@ -75,9 +79,69 @@ namespace AdventureWorks.Controllers
                                                                 , count
                                                                 , pageIndex
                                                                 , pageSize);
+
+
+
             return View(paginatedProducts);
 
         }
+        public IActionResult IndexProductCategory(string sortOrder, string searchString, int? pageNumber, int pageSize = 7)
+        {
+           
+            ViewData["CurrentSort"] = sortOrder;
+            ViewData["IDSortParm"] = string.IsNullOrEmpty(sortOrder) ? "idSortDesc" : "";
+            ViewData[" CateNameSortParm"] = sortOrder == "CategoryName" ? "CateNameSortDesc" : "CategoryName";
+            ViewData["NumSortParm"] = sortOrder == "Num" ? "numSortDesc" : "Num";
+
+            List<ProductCategoryVM> productCategories = _productCategoryRepo.GetAll();
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                productCategories =
+                    productCategories.Where(p => p.ProductName.Contains(searchString) ||
+                                        p.ProductNumber.Contains(searchString)).ToList();
+            }
+
+
+            switch (sortOrder)
+            {
+                case "numSortDesc":
+                    productCategories =
+                        productCategories.OrderByDescending(p => p.ProductNumber).ToList();
+                    break;
+                case "Num":
+                    productCategories =
+                        productCategories.OrderBy(p => p.ProductNumber).ToList();
+                    break;
+                case "nameSortDesc":
+                    productCategories =
+                        productCategories.OrderByDescending(p => p.CategoryName).ToList();
+                    break;
+                case "Name":
+                    productCategories =
+                        productCategories.OrderBy(p => p.CategoryName).ToList();
+                    break;
+                case "idSortDesc":
+                    productCategories =
+                        productCategories.OrderByDescending(p => p.ProductID).ToList();
+                    break;
+                default:
+                    productCategories =
+                        productCategories.OrderBy(p => p.ProductID).ToList();
+                    break;
+            }
+
+            int pageIndex = pageNumber ?? 1;
+            var count = productCategories.Count();
+            var items = productCategories.Skip((pageIndex - 1) * pageSize)
+                                            .Take(pageSize).ToList();
+            var paginatedProductCategories = new PaginatedList<ProductCategoryVM>(items
+                                                                , count
+                                                                , pageIndex
+                                                                , pageSize);
+
+            return View(paginatedProductCategories);
+        }
+
 
 
         public IActionResult Privacy()
